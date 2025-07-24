@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from .components import MemoryComponents
-from .config import MemoryConfig
+from autoparallel.memory.components import MemoryComponents
+from autoparallel.memory.config import MemoryConfig
 
 
 class MemoryEstimator(ABC):

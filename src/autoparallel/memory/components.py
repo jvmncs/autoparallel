@@ -120,7 +120,7 @@ class MemoryComponents:
     def breakdown_percentages(self) -> dict[str, float]:
         """Get memory breakdown as percentages of total memory."""
         if self.total_memory == 0:
-            return {component: 0.0 for component in self._component_names()}
+            return dict.fromkeys(self._component_names(), 0.0)
 
         return {
             "weights": (self.weights / self.total_memory) * 100,

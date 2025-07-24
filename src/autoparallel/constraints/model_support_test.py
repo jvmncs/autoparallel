@@ -4,18 +4,23 @@ from unittest.mock import Mock
 
 from transformers import PretrainedConfig
 
-from .analyzer import (
-    ModelConstraints,
-    ParallelismConstraintParameters,
-    _analyze_expert_parallel_constraints,
-    _analyze_pipeline_parallel_constraints,
-    _analyze_tensor_parallel_constraints,
-    _check_tied_embeddings,
+from autoparallel.constraints.model_support import (
+    ArchitectureConstraints,
+    ModelArchitectureInfo,
+    ModelArchitectureType,
+    QuantizationType,
+    _calculate_expert_parallel_constraints,
+    _calculate_pipeline_parallel_constraints,
+    _calculate_tensor_parallel_constraints,
     _determine_vocab_divisibility_requirement,
+    _extract_additional_features,
     _get_divisors,
     _get_efficient_divisors,
-    _is_efficient_divisor,
-    analyze_model_constraints,
+    _is_power_of_2_or_small_factors,
+    calculate_architecture_constraints,
+    detect_model_architecture,
+    get_model_family_constraints,
+    get_quantization_memory_multiplier,
 )
 
 
@@ -30,8 +35,10 @@ class TestModelArchitectureDetection:
         config.num_hidden_layers = 12
         config.vocab_size = 50257
         config.intermediate_size = 3072
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.max_tensor_parallel <= 12  # Limited by attention heads
         assert 1 in constraints.tensor_parallel_divisors
@@ -48,8 +55,10 @@ class TestModelArchitectureDetection:
         config.vocab_size = 32000
         config.intermediate_size = 14336
         config.num_local_experts = 8  # Mixtral-style MoE
+        config.model_type = "mixtral"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.max_expert_parallel == 8
         assert 1 in constraints.expert_parallel_divisors
@@ -66,8 +75,10 @@ class TestModelArchitectureDetection:
         config.num_hidden_layers = 32
         config.vocab_size = 32000
         config.intermediate_size = 11008
+        config.model_type = "llama"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.supports_grouped_query_attention
         assert constraints.max_tensor_parallel <= 8  # Limited by KV heads
@@ -80,8 +91,10 @@ class TestModelArchitectureDetection:
         config.num_hidden_layers = 12
         config.vocab_size = 50257
         config.tie_word_embeddings = True
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.requires_tied_embeddings
 
@@ -91,12 +104,14 @@ class TestModelArchitectureDetection:
         config.hidden_size = 768
         config.num_attention_heads = 12
         config.num_hidden_layers = 12
+        config.model_type = "gpt2"
         # Missing vocab_size and intermediate_size
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Should use defaults
-        assert constraints.vocabulary_sharding >= 1
+        assert constraints.vocab_divisibility_requirement >= 1
         assert constraints.max_tensor_parallel >= 1
 
 
@@ -111,8 +126,10 @@ class TestConstraintValidation:
         config.num_hidden_layers = 12
         config.vocab_size = 50257
         config.intermediate_size = 3072
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Test valid TP sizes
         valid_tp_sizes = constraints.get_valid_tensor_parallel_sizes(max_gpus=8)
@@ -128,8 +145,10 @@ class TestConstraintValidation:
         config.num_hidden_layers = 32
         config.vocab_size = 32000
         config.num_local_experts = 8
+        config.model_type = "mixtral"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Test valid EP sizes
         valid_ep_sizes = constraints.get_valid_expert_parallel_sizes(max_gpus=16)
@@ -144,11 +163,13 @@ class TestConstraintValidation:
         config.num_attention_heads = 32
         config.num_hidden_layers = 48  # Large model
         config.vocab_size = 32000
+        config.model_type = "llama"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Test valid PP sizes
-        valid_pp_sizes = constraints.get_valid_pipeline_parallel_sizes(max_nodes=8)
+        valid_pp_sizes = constraints.get_valid_pipeline_parallel_sizes(max_stages=8)
         assert 1 in valid_pp_sizes
         assert all(48 / size >= 2 for size in valid_pp_sizes)  # Min 2 layers per stage
 
@@ -159,13 +180,12 @@ class TestConstraintValidation:
         config.num_attention_heads = 12
         config.num_hidden_layers = 24
         config.vocab_size = 50257
+        config.model_type = "gpt2"
 
-        custom_params = ParallelismConstraintParameters(
-            default_min_layers_per_stage=4,  # Higher minimum
-            default_max_tensor_parallel=8,  # Lower maximum
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(
+            arch_info, min_layers_per_stage=4
         )
-
-        constraints = analyze_model_constraints(config, custom_params)
 
         assert constraints.min_layers_per_stage == 4
         assert constraints.max_pipeline_parallel == 6  # 24 layers / 4 min per stage
@@ -181,12 +201,14 @@ class TestEdgeCases:
         config.num_attention_heads = 12
         config.num_hidden_layers = 1  # Single layer
         config.vocab_size = 50257
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Pipeline parallelism should be limited
         assert constraints.max_pipeline_parallel == 0  # 1 layer / 2 min per stage
-        valid_pp_sizes = constraints.get_valid_pipeline_parallel_sizes(max_nodes=8)
+        valid_pp_sizes = constraints.get_valid_pipeline_parallel_sizes(max_stages=8)
         assert valid_pp_sizes == []  # No valid PP sizes
 
     def test_tiny_model_architecture(self):
@@ -196,8 +218,10 @@ class TestEdgeCases:
         config.num_attention_heads = 2
         config.num_hidden_layers = 2
         config.vocab_size = 1000
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.max_tensor_parallel <= 2
         assert 1 in constraints.tensor_parallel_divisors
@@ -211,8 +235,10 @@ class TestEdgeCases:
         config.num_hidden_layers = 64
         config.vocab_size = 100000
         config.num_local_experts = 64  # Large number of experts
+        config.model_type = "mixtral"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.max_expert_parallel == 64
         valid_ep_sizes = constraints.get_valid_expert_parallel_sizes(max_gpus=128)
@@ -226,8 +252,10 @@ class TestEdgeCases:
         config.num_attention_heads = 17  # Prime number
         config.num_hidden_layers = 23  # Prime number
         config.vocab_size = 30001  # Prime number
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         # Should still work, but with limited parallelization
         assert constraints.max_tensor_parallel >= 1
@@ -247,8 +275,10 @@ class TestModelFamilyDetection:
         config.vocab_size = 32000
         config.intermediate_size = 11008
         config.tie_word_embeddings = False
+        config.model_type = "llama"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert not constraints.supports_grouped_query_attention
         assert not constraints.requires_tied_embeddings
@@ -263,8 +293,10 @@ class TestModelFamilyDetection:
         config.vocab_size = 50257
         config.intermediate_size = 6400
         config.tie_word_embeddings = True
+        config.model_type = "gpt2"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.requires_tied_embeddings
         assert not constraints.supports_grouped_query_attention
@@ -278,8 +310,10 @@ class TestModelFamilyDetection:
         config.vocab_size = 32128
         config.intermediate_size = 2048
         config.tie_word_embeddings = True
+        config.model_type = "t5"
 
-        constraints = analyze_model_constraints(config)
+        arch_info = detect_model_architecture(config)
+        constraints = calculate_architecture_constraints(arch_info)
 
         assert constraints.requires_tied_embeddings
 
@@ -289,13 +323,19 @@ class TestArchitectureSpecificParameterExtraction:
 
     def test_tensor_parallel_parameter_extraction(self):
         """Test tensor parallel parameter extraction."""
-        result = _analyze_tensor_parallel_constraints(
+        arch_info = ModelArchitectureInfo(
             hidden_size=768,
             num_attention_heads=12,
             num_key_value_heads=12,
+            num_layers=12,
             vocab_size=50257,
             intermediate_size=3072,
-            constraint_params=ParallelismConstraintParameters(),
+            architecture_type=ModelArchitectureType.DENSE_TRANSFORMER,
+            model_type="gpt2",
+        )
+
+        result = _calculate_tensor_parallel_constraints(
+            arch_info, max_tensor_parallel=64
         )
 
         assert "max_size" in result
@@ -306,20 +346,29 @@ class TestArchitectureSpecificParameterExtraction:
     def test_expert_parallel_parameter_extraction(self):
         """Test expert parallel parameter extraction."""
         # Non-MoE model
-        config = Mock(spec=PretrainedConfig)
-        # No num_local_experts or num_experts attribute
+        arch_info = ModelArchitectureInfo(
+            hidden_size=4096,
+            num_attention_heads=32,
+            num_key_value_heads=32,
+            num_layers=32,
+            vocab_size=32000,
+            intermediate_size=14336,
+            architecture_type=ModelArchitectureType.DENSE_TRANSFORMER,
+            model_type="llama",
+            num_experts=0,
+        )
 
-        result = _analyze_expert_parallel_constraints(
-            config, ParallelismConstraintParameters()
+        result = _calculate_expert_parallel_constraints(
+            arch_info, min_experts_per_device=1
         )
 
         assert result["max_size"] == 0
         assert result["valid_sizes"] == {1}
 
         # MoE model
-        config.num_local_experts = 8
-        result = _analyze_expert_parallel_constraints(
-            config, ParallelismConstraintParameters()
+        arch_info.num_experts = 8
+        result = _calculate_expert_parallel_constraints(
+            arch_info, min_experts_per_device=1
         )
 
         assert result["max_size"] == 8
@@ -327,11 +376,19 @@ class TestArchitectureSpecificParameterExtraction:
 
     def test_pipeline_parallel_parameter_extraction(self):
         """Test pipeline parallel parameter extraction."""
-        result = _analyze_pipeline_parallel_constraints(
+        arch_info = ModelArchitectureInfo(
+            hidden_size=4096,
+            num_attention_heads=32,
+            num_key_value_heads=32,
             num_layers=24,
-            constraint_params=ParallelismConstraintParameters(
-                default_min_layers_per_stage=3
-            ),
+            vocab_size=32000,
+            intermediate_size=14336,
+            architecture_type=ModelArchitectureType.DENSE_TRANSFORMER,
+            model_type="llama",
+        )
+
+        result = _calculate_pipeline_parallel_constraints(
+            arch_info, min_layers_per_stage=3
         )
 
         assert result["max_size"] == 8  # 24 layers / 3 min per stage
@@ -339,19 +396,17 @@ class TestArchitectureSpecificParameterExtraction:
 
     def test_vocabulary_divisibility_requirements(self):
         """Test vocabulary divisibility requirement calculation."""
-        params = ParallelismConstraintParameters()
-
         # Small vocabulary
-        small_req = _determine_vocab_divisibility_requirement(10000, params)
-        assert small_req == params.vocab_small_divisibility
+        small_req = _determine_vocab_divisibility_requirement(10000)
+        assert small_req == 2
 
         # Medium vocabulary
-        medium_req = _determine_vocab_divisibility_requirement(75000, params)
-        assert medium_req == params.vocab_medium_divisibility
+        medium_req = _determine_vocab_divisibility_requirement(75000)
+        assert medium_req == 4
 
         # Large vocabulary
-        large_req = _determine_vocab_divisibility_requirement(150000, params)
-        assert large_req == params.vocab_large_divisibility
+        large_req = _determine_vocab_divisibility_requirement(150000)
+        assert large_req == 8
 
 
 class TestUtilityFunctions:
@@ -383,46 +438,51 @@ class TestUtilityFunctions:
         assert 6 in divisors
         assert 12 in divisors
 
-    def test_is_efficient_divisor(self):
+    def test_is_power_of_2_or_small_factors(self):
         """Test efficient divisor detection."""
         # Powers of 2
-        assert _is_efficient_divisor(1)
-        assert _is_efficient_divisor(2)
-        assert _is_efficient_divisor(4)
-        assert _is_efficient_divisor(16)
-        assert _is_efficient_divisor(64)
+        assert _is_power_of_2_or_small_factors(1)
+        assert _is_power_of_2_or_small_factors(2)
+        assert _is_power_of_2_or_small_factors(4)
+        assert _is_power_of_2_or_small_factors(16)
+        assert _is_power_of_2_or_small_factors(64)
 
         # Numbers with small prime factors (2, 3, 5, 7)
-        assert _is_efficient_divisor(6)  # 2 * 3
-        assert _is_efficient_divisor(10)  # 2 * 5
-        assert _is_efficient_divisor(14)  # 2 * 7
-        assert _is_efficient_divisor(21)  # 3 * 7
+        assert _is_power_of_2_or_small_factors(6)  # 2 * 3
+        assert _is_power_of_2_or_small_factors(10)  # 2 * 5
+        assert _is_power_of_2_or_small_factors(14)  # 2 * 7
+        assert _is_power_of_2_or_small_factors(21)  # 3 * 7
 
         # Numbers with large prime factors
-        assert not _is_efficient_divisor(11)  # Prime > 7
-        assert not _is_efficient_divisor(13)  # Prime > 7
-        assert not _is_efficient_divisor(33)  # 3 * 11
+        assert not _is_power_of_2_or_small_factors(11)  # Prime > 7
+        assert not _is_power_of_2_or_small_factors(13)  # Prime > 7
+        assert not _is_power_of_2_or_small_factors(33)  # 3 * 11
 
-    def test_check_tied_embeddings(self):
-        """Test tied embeddings detection."""
+    def test_extract_additional_features(self):
+        """Test additional features extraction."""
         config = Mock(spec=PretrainedConfig)
         config.tie_word_embeddings = True
-        assert _check_tied_embeddings(config)
+        config.model_type = "llama"
+
+        features = _extract_additional_features(config)
+        assert features["has_tied_embeddings"]
 
         config.tie_word_embeddings = False
-        assert not _check_tied_embeddings(config)
+        features = _extract_additional_features(config)
+        assert not features["has_tied_embeddings"]
 
         # Missing attribute should default to False
         del config.tie_word_embeddings
-        assert not _check_tied_embeddings(config)
+        features = _extract_additional_features(config)
+        assert not features["has_tied_embeddings"]
 
 
-class TestModelConstraintsClass:
-    """Test ModelConstraints class methods."""
+class TestArchitectureConstraintsClass:
+    """Test ArchitectureConstraints class methods."""
 
     def test_get_valid_tensor_parallel_sizes(self):
         """Test tensor parallel size validation."""
-        constraints = ModelConstraints(
+        constraints = ArchitectureConstraints(
             max_tensor_parallel=8,
             tensor_parallel_divisors={1, 2, 4, 8},
             max_expert_parallel=0,
@@ -431,7 +491,8 @@ class TestModelConstraintsClass:
             min_layers_per_stage=2,
             requires_tied_embeddings=False,
             supports_grouped_query_attention=False,
-            vocabulary_sharding=2,
+            vocab_divisibility_requirement=2,
+            preferred_attention_head_divisors={1, 2, 4, 8},
         )
 
         # Should return sizes up to max_gpus limit
@@ -445,7 +506,7 @@ class TestModelConstraintsClass:
     def test_get_valid_expert_parallel_sizes(self):
         """Test expert parallel size validation."""
         # Non-MoE model
-        constraints = ModelConstraints(
+        constraints = ArchitectureConstraints(
             max_tensor_parallel=8,
             tensor_parallel_divisors={1, 2, 4, 8},
             max_expert_parallel=0,
@@ -454,7 +515,8 @@ class TestModelConstraintsClass:
             min_layers_per_stage=2,
             requires_tied_embeddings=False,
             supports_grouped_query_attention=False,
-            vocabulary_sharding=2,
+            vocab_divisibility_requirement=2,
+            preferred_attention_head_divisors={1, 2, 4, 8},
         )
 
         valid_sizes = constraints.get_valid_expert_parallel_sizes(max_gpus=8)
@@ -469,7 +531,7 @@ class TestModelConstraintsClass:
 
     def test_get_valid_pipeline_parallel_sizes(self):
         """Test pipeline parallel size validation."""
-        constraints = ModelConstraints(
+        constraints = ArchitectureConstraints(
             max_tensor_parallel=8,
             tensor_parallel_divisors={1, 2, 4, 8},
             max_expert_parallel=0,
@@ -478,7 +540,8 @@ class TestModelConstraintsClass:
             min_layers_per_stage=2,
             requires_tied_embeddings=False,
             supports_grouped_query_attention=False,
-            vocabulary_sharding=2,
+            vocab_divisibility_requirement=2,
+            preferred_attention_head_divisors={1, 2, 4, 8},
         )
 
         # Should ensure at least min_layers_per_stage per stage
@@ -487,5 +550,44 @@ class TestModelConstraintsClass:
             if 12 / size >= 2:  # min_layers_per_stage
                 expected_sizes.append(size)
 
-        actual_sizes = constraints.get_valid_pipeline_parallel_sizes(max_nodes=8)
+        actual_sizes = constraints.get_valid_pipeline_parallel_sizes(max_stages=8)
         assert actual_sizes == expected_sizes
+
+
+class TestModelFamilyConstraints:
+    """Test model family specific constraints."""
+
+    def test_get_model_family_constraints_llama(self):
+        """Test LLaMA family constraints."""
+        constraints = get_model_family_constraints("meta-llama/Llama-2-7b-hf")
+        assert constraints["family"] == "llama"
+        assert constraints["supports_flash_attention"]
+        assert 1 in constraints["preferred_tp_sizes"]
+
+    def test_get_model_family_constraints_mixtral(self):
+        """Test Mixtral family constraints."""
+        constraints = get_model_family_constraints("mistralai/Mixtral-8x7B-v0.1")
+        assert constraints["family"] == "mixtral"
+        assert constraints["supports_flash_attention"]
+        assert "preferred_ep_sizes" in constraints
+
+    def test_get_model_family_constraints_unknown(self):
+        """Test unknown model family constraints."""
+        constraints = get_model_family_constraints("unknown/model")
+        assert constraints["family"] == "unknown"
+        assert not constraints["supports_flash_attention"]
+
+
+class TestQuantizationSupport:
+    """Test quantization memory calculations."""
+
+    def test_get_quantization_memory_multiplier(self):
+        """Test quantization memory multipliers."""
+        assert (
+            get_quantization_memory_multiplier(QuantizationType.FULL_PRECISION) == 1.0
+        )
+        assert get_quantization_memory_multiplier(QuantizationType.GPTQ) == 0.25
+        assert get_quantization_memory_multiplier(QuantizationType.AWQ) == 0.25
+        assert get_quantization_memory_multiplier(QuantizationType.BITSANDBYTES) == 0.5
+        assert get_quantization_memory_multiplier(QuantizationType.INT8) == 0.5
+        assert get_quantization_memory_multiplier(QuantizationType.UNKNOWN) == 1.0

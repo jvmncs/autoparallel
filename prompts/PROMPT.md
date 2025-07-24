@@ -26,7 +26,9 @@
 
 99999999999999. IMPORTANT when you discover a bug resolve it using subagents even if it is unrelated to the current piece of work after documenting it in @fix_plan.md
 
-99999999999999999. The tests for the library "stdlib" should be located in the folder of the library next to the source code. Ensure you document the library with a README.md in the same folder as the source code.
+99999999999999999. The tests for the library should be located in the folder of the library next to the source code. Ensure you document the library with a README.md in the same folder as the source code.
+
+999999999999999999. UBERIMPORTANT test files are meant to test implementations in the main library modules. NEVER reimplement functionality in a test file. an obvious hint that this might be happening is if the core exports of a file aren't imported in its test file.
 
 9999999999999999999. Keep AGENT.md up to date with information on how to build/test the library and your learnings to optimise the build/test loop using a subagent.
 

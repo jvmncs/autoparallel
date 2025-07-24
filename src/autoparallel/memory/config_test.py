@@ -2,7 +2,7 @@
 
 import pytest
 
-from .config import MemoryConfig
+from autoparallel.memory.config import MemoryConfig
 
 
 class TestMemoryConfig:

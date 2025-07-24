@@ -2,9 +2,13 @@
 
 import pytest
 
-from .components import MemoryComponents
-from .config import MemoryConfig
-from .estimator import MemoryEstimator, MoEMemoryEstimator, TransformersMemoryEstimator
+from autoparallel.memory.components import MemoryComponents
+from autoparallel.memory.config import MemoryConfig
+from autoparallel.memory.estimator import (
+    MemoryEstimator,
+    MoEMemoryEstimator,
+    TransformersMemoryEstimator,
+)
 
 # Mock model configurations based on real architectures
 LLAMA_7B_CONFIG = {

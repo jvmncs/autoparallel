@@ -9,8 +9,8 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
-from ..memory.config import MemoryConfig
-from ..memory.estimator import MemoryEstimator, TransformersMemoryEstimator
+from autoparallel.memory.config import MemoryConfig
+from autoparallel.memory.estimator import MemoryEstimator, TransformersMemoryEstimator
 
 
 class ValidationError(Exception):

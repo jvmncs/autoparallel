@@ -2,7 +2,7 @@
 
 import pytest
 
-from .components import MemoryComponents
+from autoparallel.memory.components import MemoryComponents
 
 
 def test_memory_components_creation():

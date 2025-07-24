@@ -64,6 +64,12 @@ uv sync --group dev
 - Use double quotes for strings
 - Use space indentation
 
+### Imports
+- Always use **absolute imports**: `from autoparallel.module.submodule import Class`
+- Never use **relative imports**: `from .submodule import Class` or `from ..module import Class`
+- Absolute imports avoid confusion and make dependencies clear
+- Improves IDE support and refactoring capabilities
+
 ### Type Hints
 - Use type hints for all function parameters and return values
 - Type checking with **ty** (pre-release software)

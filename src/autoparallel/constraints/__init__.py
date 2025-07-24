@@ -1,6 +1,6 @@
 """Architecture constraint analysis for model parallelization."""
 
-from .analyzer import (
+from autoparallel.constraints.analyzer import (
     ModelConstraints,
     ParallelismConstraintParameters,
     analyze_model_constraints,
