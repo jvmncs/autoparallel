@@ -96,7 +96,7 @@ This project uses **jj** (Jujutsu) instead of Git for version control.
 **Basic Workflow:**
 ```bash
 jj st --no-pager                    # Check repository status
-jj new                              # Create new commit with current changes
+jj new                              # Make new commit for future changes; if changes already in working copy, skip this
 jj describe -m "commit message"     # Add description to current commit
 jj log --no-pager                   # View commit history
 ```
