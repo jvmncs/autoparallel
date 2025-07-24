@@ -15,31 +15,37 @@ from autoparallel.memory.estimator import MemoryEstimator, TransformersMemoryEst
 
 class ValidationError(Exception):
     """Base exception for validation errors."""
+
     pass
 
 
 class TensorParallelValidationError(ValidationError):
     """Exception for tensor parallelism validation errors."""
+
     pass
 
 
 class PipelineParallelValidationError(ValidationError):
     """Exception for pipeline parallelism validation errors."""
+
     pass
 
 
 class ExpertParallelValidationError(ValidationError):
     """Exception for expert parallelism validation errors."""
+
     pass
 
 
 class CrossConstraintValidationError(ValidationError):
     """Exception for cross-component constraint validation errors."""
+
     pass
 
 
 class ClusterResourceValidationError(ValidationError):
     """Exception for cluster resource constraint validation errors."""
+
     pass
 
 
@@ -53,6 +59,7 @@ class ValidationResult:
         warnings: List of validation warning messages
         recommendations: List of optimization recommendations
     """
+
     is_valid: bool
     errors: list[str]
     warnings: list[str]
@@ -73,6 +80,7 @@ class ParallelismConfig:
         expert_parallel_size: Expert parallelism size (for MoE models)
         data_parallel_size: Data parallelism size
     """
+
     tensor_parallel_size: int = 1
     pipeline_parallel_size: int = 1
     expert_parallel_size: int = 1
@@ -100,6 +108,7 @@ class ClusterSpec:
         inter_node_bandwidth_gbps: Inter-node bandwidth in Gbps
         intra_node_bandwidth_gbps: Intra-node bandwidth in Gbps
     """
+
     total_gpus: int
     gpus_per_node: int
     gpu_memory_gb: float
@@ -123,7 +132,7 @@ class ConstraintValidator:
         self,
         model_config: dict[str, Any],
         memory_config: MemoryConfig | None = None,
-        memory_estimator: MemoryEstimator | None = None
+        memory_estimator: MemoryEstimator | None = None,
     ):
         """Initialize constraint validator.
 
@@ -168,7 +177,7 @@ class ConstraintValidator:
         cluster_spec: ClusterSpec,
         sequence_length: int = 2048,
         batch_size: int = 1,
-        is_training: bool = False
+        is_training: bool = False,
     ) -> ValidationResult:
         """Validate a complete parallelism configuration.
 
@@ -217,8 +226,14 @@ class ConstraintValidator:
 
         try:
             self._validate_memory_constraints(
-                parallelism_config, cluster_spec, sequence_length,
-                batch_size, is_training, errors, warnings, recommendations
+                parallelism_config,
+                cluster_spec,
+                sequence_length,
+                batch_size,
+                is_training,
+                errors,
+                warnings,
+                recommendations,
             )
         except ValidationError as e:
             errors.append(str(e))
@@ -234,7 +249,7 @@ class ConstraintValidator:
             is_valid=len(errors) == 0,
             errors=errors,
             warnings=warnings,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def _validate_tensor_parallel_constraints(
@@ -242,7 +257,7 @@ class ConstraintValidator:
         config: ParallelismConfig,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate tensor parallelism constraints."""
         tp_size = config.tensor_parallel_size
@@ -299,7 +314,7 @@ class ConstraintValidator:
         config: ParallelismConfig,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate pipeline parallelism constraints."""
         pp_size = config.pipeline_parallel_size
@@ -347,7 +362,7 @@ class ConstraintValidator:
         config: ParallelismConfig,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate expert parallelism constraints for MoE models."""
         ep_size = config.expert_parallel_size
@@ -395,7 +410,7 @@ class ConstraintValidator:
         cluster_spec: ClusterSpec,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate cross-component constraints."""
         total_gpus_needed = config.total_gpus
@@ -416,8 +431,10 @@ class ConstraintValidator:
 
         # Validate parallelism product
         expected_total = (
-            config.tensor_parallel_size * config.pipeline_parallel_size *
-            config.expert_parallel_size * config.data_parallel_size
+            config.tensor_parallel_size
+            * config.pipeline_parallel_size
+            * config.expert_parallel_size
+            * config.data_parallel_size
         )
 
         if expected_total != total_gpus_needed:
@@ -437,7 +454,7 @@ class ConstraintValidator:
         is_training: bool,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate memory constraints."""
         # Estimate memory usage
@@ -448,7 +465,7 @@ class ConstraintValidator:
             tensor_parallel_size=config.tensor_parallel_size,
             pipeline_parallel_size=config.pipeline_parallel_size,
             expert_parallel_size=config.expert_parallel_size,
-            is_training=is_training
+            is_training=is_training,
         )
 
         # Convert bytes to GB
@@ -490,7 +507,7 @@ class ConstraintValidator:
         cluster_spec: ClusterSpec,
         errors: list[str],
         warnings: list[str],
-        recommendations: list[str]
+        recommendations: list[str],
     ) -> None:
         """Validate network topology constraints."""
         tp_size = config.tensor_parallel_size
@@ -540,8 +557,10 @@ class ConstraintValidator:
         valid_sizes = []
 
         for tp_size in range(1, max_gpus + 1):
-            if (self.num_attention_heads % tp_size == 0 and
-                self.num_key_value_heads % tp_size == 0):
+            if (
+                self.num_attention_heads % tp_size == 0
+                and self.num_key_value_heads % tp_size == 0
+            ):
                 valid_sizes.append(tp_size)
 
         return valid_sizes
@@ -595,7 +614,7 @@ def validate_parallelism_combination(
     pipeline_parallel_size: int,
     expert_parallel_size: int,
     data_parallel_size: int,
-    total_gpus: int
+    total_gpus: int,
 ) -> ValidationResult:
     """Validate a parallelism combination for basic consistency.
 
@@ -621,7 +640,7 @@ def validate_parallelism_combination(
         ("tensor_parallel_size", tensor_parallel_size),
         ("pipeline_parallel_size", pipeline_parallel_size),
         ("expert_parallel_size", expert_parallel_size),
-        ("data_parallel_size", data_parallel_size)
+        ("data_parallel_size", data_parallel_size),
     ]
 
     for name, size in sizes:
@@ -630,8 +649,10 @@ def validate_parallelism_combination(
 
     # Check GPU allocation
     required_gpus = (
-        tensor_parallel_size * pipeline_parallel_size *
-        expert_parallel_size * data_parallel_size
+        tensor_parallel_size
+        * pipeline_parallel_size
+        * expert_parallel_size
+        * data_parallel_size
     )
 
     if required_gpus != total_gpus:
@@ -657,7 +678,7 @@ def validate_parallelism_combination(
         is_valid=len(errors) == 0,
         errors=errors,
         warnings=warnings,
-        recommendations=recommendations
+        recommendations=recommendations,
     )
 
 

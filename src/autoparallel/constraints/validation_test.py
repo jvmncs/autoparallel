@@ -27,7 +27,7 @@ class TestValidationResult:
             is_valid=True,
             errors=[],
             warnings=["warning"],
-            recommendations=["recommendation"]
+            recommendations=["recommendation"],
         )
 
         assert result.is_valid
@@ -39,10 +39,7 @@ class TestValidationResult:
     def test_validation_result_invalid(self):
         """Test ValidationResult with errors."""
         result = ValidationResult(
-            is_valid=False,
-            errors=["error1", "error2"],
-            warnings=[],
-            recommendations=[]
+            is_valid=False, errors=["error1", "error2"], warnings=[], recommendations=[]
         )
 
         assert not result.is_valid
@@ -69,7 +66,7 @@ class TestParallelismConfig:
             tensor_parallel_size=2,
             pipeline_parallel_size=4,
             expert_parallel_size=2,
-            data_parallel_size=2
+            data_parallel_size=2,
         )
 
         assert config.tensor_parallel_size == 2
@@ -84,11 +81,7 @@ class TestClusterSpec:
 
     def test_cluster_spec_creation(self):
         """Test ClusterSpec creation and properties."""
-        spec = ClusterSpec(
-            total_gpus=16,
-            gpus_per_node=8,
-            gpu_memory_gb=80.0
-        )
+        spec = ClusterSpec(total_gpus=16, gpus_per_node=8, gpu_memory_gb=80.0)
 
         assert spec.total_gpus == 16
         assert spec.gpus_per_node == 8
@@ -115,7 +108,7 @@ class TestConstraintValidator:
             "hidden_size": 4096,
             "num_attention_heads": 32,
             "num_hidden_layers": 32,
-            "vocab_size": 32000
+            "vocab_size": 32000,
         }
 
         validator = ConstraintValidator(model_config)
@@ -154,7 +147,7 @@ class TestConstraintValidator:
         """Test valid tensor parallel size calculation."""
         model_config = {
             "num_attention_heads": 32,
-            "num_key_value_heads": 8  # GQA
+            "num_key_value_heads": 8,  # GQA
         }
         validator = ConstraintValidator(model_config)
 
@@ -213,7 +206,7 @@ class TestTensorParallelValidation:
             "num_key_value_heads": 32,
             "hidden_size": 4096,
             "intermediate_size": 16384,
-            "vocab_size": 32000
+            "vocab_size": 32000,
         }
         validator = ConstraintValidator(model_config)
 
@@ -227,7 +220,7 @@ class TestTensorParallelValidation:
         """Test tensor parallel validation with incompatible attention heads."""
         model_config = {
             "num_attention_heads": 7,  # Prime number
-            "num_key_value_heads": 7
+            "num_key_value_heads": 7,
         }
         validator = ConstraintValidator(model_config)
 
@@ -242,7 +235,7 @@ class TestTensorParallelValidation:
         """Test tensor parallel validation with incompatible KV heads."""
         model_config = {
             "num_attention_heads": 32,
-            "num_key_value_heads": 7  # Prime number
+            "num_key_value_heads": 7,  # Prime number
         }
         validator = ConstraintValidator(model_config)
 
@@ -372,8 +365,7 @@ class TestCrossConstraintValidation:
         validator = ConstraintValidator(model_config)
 
         config = ParallelismConfig(
-            tensor_parallel_size=4,
-            pipeline_parallel_size=4
+            tensor_parallel_size=4, pipeline_parallel_size=4
         )  # Requires 16 GPUs
         cluster_spec = ClusterSpec(total_gpus=8, gpus_per_node=8, gpu_memory_gb=80.0)
 
@@ -390,7 +382,7 @@ class TestCrossConstraintValidation:
         config = ParallelismConfig(
             tensor_parallel_size=2,
             pipeline_parallel_size=2,
-            data_parallel_size=1  # 2 * 2 * 1 * 1 = 4
+            data_parallel_size=1,  # 2 * 2 * 1 * 1 = 4
         )
         cluster_spec = ClusterSpec(total_gpus=8, gpus_per_node=8, gpu_memory_gb=80.0)
 
@@ -446,7 +438,7 @@ class TestUtilityFunctions:
             pipeline_parallel_size=2,
             expert_parallel_size=1,
             data_parallel_size=2,
-            total_gpus=8
+            total_gpus=8,
         )
 
         assert result.is_valid
@@ -459,7 +451,7 @@ class TestUtilityFunctions:
             pipeline_parallel_size=2,
             expert_parallel_size=1,
             data_parallel_size=1,  # 2*2*1*1 = 4, but total_gpus = 8
-            total_gpus=8
+            total_gpus=8,
         )
 
         assert not result.is_valid
@@ -472,7 +464,7 @@ class TestUtilityFunctions:
             pipeline_parallel_size=2,
             expert_parallel_size=1,
             data_parallel_size=1,
-            total_gpus=2
+            total_gpus=2,
         )
 
         assert not result.is_valid
@@ -485,7 +477,7 @@ class TestUtilityFunctions:
             pipeline_parallel_size=8,  # High PP
             expert_parallel_size=1,
             data_parallel_size=1,
-            total_gpus=128
+            total_gpus=128,
         )
 
         # Should have warnings about high parallelism
@@ -530,17 +522,14 @@ class TestTopologyValidation:
 
     def test_tensor_parallel_exceeds_gpus_per_node(self):
         """Test tensor parallel size exceeding GPUs per node."""
-        model_config = {
-            "num_attention_heads": 32,
-            "num_key_value_heads": 32
-        }
+        model_config = {"num_attention_heads": 32, "num_key_value_heads": 32}
         validator = ConstraintValidator(model_config)
 
         config = ParallelismConfig(tensor_parallel_size=8)
         cluster_spec = ClusterSpec(
             total_gpus=16,
             gpus_per_node=4,  # TP > GPUs per node
-            gpu_memory_gb=80.0
+            gpu_memory_gb=80.0,
         )
 
         result = validator.validate_configuration(config, cluster_spec)
@@ -558,7 +547,7 @@ class TestTopologyValidation:
         cluster_spec = ClusterSpec(
             total_gpus=16,
             gpus_per_node=8,  # Only 2 nodes, but PP=8
-            gpu_memory_gb=80.0
+            gpu_memory_gb=80.0,
         )
 
         result = validator.validate_configuration(config, cluster_spec)

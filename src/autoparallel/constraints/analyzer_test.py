@@ -19,18 +19,20 @@ def _create_mock_config(config_dict: dict) -> MagicMock:
 
     # Handle missing attributes with defaults instead of MagicMock objects
     # Configure known attributes that might be missing
-    mock_config.configure_mock(**{
-        'num_local_experts': config_dict.get('num_local_experts', 0),
-        'num_experts': config_dict.get('num_experts', 0),
-        'tie_word_embeddings': config_dict.get('tie_word_embeddings', False),
-        'num_key_value_heads': config_dict.get(
-            'num_key_value_heads', config_dict.get('num_attention_heads', 12)
-        ),
-        'vocab_size': config_dict.get('vocab_size', 50257),
-        'intermediate_size': config_dict.get(
-            'intermediate_size', 4 * config_dict.get('hidden_size', 768)
-        ),
-    })
+    mock_config.configure_mock(
+        **{
+            "num_local_experts": config_dict.get("num_local_experts", 0),
+            "num_experts": config_dict.get("num_experts", 0),
+            "tie_word_embeddings": config_dict.get("tie_word_embeddings", False),
+            "num_key_value_heads": config_dict.get(
+                "num_key_value_heads", config_dict.get("num_attention_heads", 12)
+            ),
+            "vocab_size": config_dict.get("vocab_size", 50257),
+            "intermediate_size": config_dict.get(
+                "intermediate_size", 4 * config_dict.get("hidden_size", 768)
+            ),
+        }
+    )
 
     return mock_config
 
@@ -421,7 +423,7 @@ class TestQuantizationImpact:
 class TestMetaDeviceLoading:
     """Test meta-device loading for model config analysis."""
 
-    @patch('transformers.AutoConfig.from_pretrained')
+    @patch("transformers.AutoConfig.from_pretrained")
     def test_mock_transformers_config_loading(
         self, mock_from_pretrained, mock_llama_config
     ):

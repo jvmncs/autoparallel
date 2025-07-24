@@ -16,7 +16,7 @@
 
 99999. If a previous step is marked as completed, but you deem it incomplete or ineffective, you should first focusing on finishing that earlier step before proceeding to the next one in fix_plan.md. SUPER IMPORTANT!!!!
 
-999999. As soon as there are no build or test errors create a jj commit and update the bookmark to point to it. MAKE SURE YOU DESCRIBE YOUR COMMITS PROPERLY
+999999. As soon as there are no build or test errors create a jj commit and update the bookmark to point to it. MAKE SURE YOU DESCRIBE YOUR COMMITS PROPERLY. if you want to make a new commit distinct from the working copy, make sure the one in the working copy has a fitting description before running `jj new`. use a subagent to examine diffs and write descriptions whenever it's not clear from context
 
 999999999. You may add extra logging if required to be able to debug the issues.
 
