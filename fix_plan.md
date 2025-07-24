@@ -3,14 +3,30 @@
 > **Structure Note**: This plan is organized as a comprehensive bullet-point list of implementation steps, referencing detailed specifications in `spec/` and current source code state. When editing, maintain this concise bullet-point structure - avoid verbose explanations that duplicate spec content.
 
 ## Current State Assessment
-- Codebase: Placeholder function in `src/autoparallel/__init__.py`
+- Codebase: Only placeholder `hello()` function in `src/autoparallel/__init__.py` 
 - Specifications: Complete architectural docs in `spec/` directory
 - Dependencies: Configured Astral stack (uv, ruff, ty, pytest)
-- Architecture: Memory estimation + constraint analysis + config generation + framework integration
+- Implementation Status: **0% complete** - everything needs to be built from scratch
 
-## Critical Path Implementation
+## Phase-Based Implementation Plan
 
-### 1. Memory Estimation Framework (Priority: Critical)
+### Phase 0: Scaffolding & Tooling (Priority: Critical - NOW)
+- Create package directories & __init__.py stubs:
+  - `src/autoparallel/memory/`
+  - `src/autoparallel/constraints/`
+  - `src/autoparallel/config/`
+  - `src/autoparallel/api/`
+  - `src/autoparallel/frameworks/`
+  - `src/autoparallel/cluster/`
+  - `src/autoparallel/workload/`
+  - `src/autoparallel/deployment/`
+  - `src/autoparallel/validation/`
+- Add `py.typed` marker for type checking
+- Configure entry points in pyproject.toml for pip install -e .
+- Setup CI workflow: ruff check+format, ty check, pytest
+- Create conftest.py with basic pytest fixtures
+
+### Phase 1: Memory Estimation Framework (Priority: Critical)
 - Create `src/autoparallel/memory/estimator.py`
   - Implement unified memory calculation (weights, activations, KV cache, CUDA graphs)
   - Support GPTQ, AWQ, bitsandbytes quantization formats
@@ -27,7 +43,7 @@
 - Create `src/autoparallel/memory/components_test.py`
   - Validation against different quantization formats
 
-### 2. Architecture Constraint Analyzer (Priority: Critical)
+### Phase 2: Architecture Constraint Analyzer (Priority: Critical)
 - Create `src/autoparallel/constraints/analyzer.py`
   - Implement ModelConstraints dataclass (max_tensor_parallel, max_pipeline_parallel, max_expert_parallel, vocabulary_sharding)
   - Add analyze_model_constraints() function for automatic constraint detection
@@ -46,7 +62,7 @@
   - Constraint validation across different architectures
   - Edge case testing (single layer models, massive MoE)
 
-### 3. Configuration Generator (Priority: High)
+### Phase 3: Configuration Generator (Priority: High)
 - Create `src/autoparallel/config/generator.py`
   - Implement generate_valid_configs() for TP/PP/EP/DP enumeration
   - Filter configurations by memory constraints
@@ -62,7 +78,7 @@
 - Create `src/autoparallel/config/validator_test.py`
 - Create `src/conftest.py` (pytest fixtures)
 
-### 4. Public API Implementation (Priority: Critical)
+### Phase 4: Public API Implementation (Priority: Critical)
 - Create `src/autoparallel/api/simple.py`
   - Implement analyze(model: str, cluster: dict) -> AnalysisResult
   - Implement optimize(model: str, cluster: dict, workload: str) -> OptimizedConfig
@@ -73,9 +89,7 @@
   - Export public interface functions and classes
   - Clean up placeholder code
 
-## Framework Integration
-
-### 5. vLLM Integration (Priority: High)
+### Phase 5: vLLM Integration & Autotuning (Priority: High)
 - Create `src/autoparallel/frameworks/vllm_optimizer.py`
   - Implement VLLMOptimizer class
   - Add optimize_kv_cache_vs_cuda_graphs() method
@@ -93,44 +107,7 @@
 - Create `src/autoparallel/deployment/vllm_commands_test.py`
   - Deployment command generation testing
 
-### 6. DeepSpeed Integration (Priority: Medium)
-- Create `src/autoparallel/frameworks/deepspeed_optimizer.py`
-  - Implement DeepSpeedOptimizer class
-  - Add optimize_zero_config() method
-  - Automatic ZeRO stage selection (1/2/3)
-  - Training-specific optimizations
-- Create `src/autoparallel/frameworks/zero_config.py`
-  - ZeRO configuration handling
-  - Gradient accumulation optimization
-- Create `src/autoparallel/deployment/deepspeed_commands.py`
-  - DeepSpeed command generation
-
-## Enhanced Features
-
-### 7. Cluster Auto-Detection (Priority: Medium)
-- Create `src/autoparallel/cluster/detection.py`
-  - Implement detect_cluster() function
-  - SLURM environment variable detection
-  - torchrun distributed settings detection
-  - Local GPU detection via nvidia-ml-py
-- Create `src/autoparallel/cluster/topology.py`
-  - Network topology inference
-  - Intra-node vs inter-node efficiency modeling
-  - NVSwitch vs RDMA communication costs
-  - NCCL backend optimization
-
-### 8. Workload Profiling (Priority: Medium)
-- Create `src/autoparallel/workload/profiler.py`
-  - Request rate pattern analysis
-  - Batch size distribution analysis
-  - Latency requirement assessment
-- Create `src/autoparallel/workload/patterns.py`
-  - Workload type definitions (chatbot, batch inference, training)
-  - Performance metrics calculation
-
-## Validation and Production
-
-### 9. Empirical Validation (Priority: High)
+### Phase 6: Empirical Validation & Benchmarks (Priority: High)
 - Create `src/validation/memory_accuracy_test.py`
   - Limited model loading for accuracy tests
   - Memory estimation error measurement (<10% target)
@@ -146,14 +123,45 @@
   - Extreme: Llama4-Scout (10M context), Kimi-K2 (384 experts)
   - Multimodal: Llama4 text+image
 
-### 10. Performance Optimization (Priority: Medium)
+### Phase 7: DeepSpeed Integration (Priority: Medium)
+- Create `src/autoparallel/frameworks/deepspeed_optimizer.py`
+  - Implement DeepSpeedOptimizer class
+  - Add optimize_zero_config() method
+  - Automatic ZeRO stage selection (1/2/3)
+  - Training-specific optimizations
+- Create `src/autoparallel/frameworks/zero_config.py`
+  - ZeRO configuration handling
+  - Gradient accumulation optimization
+- Create `src/autoparallel/deployment/deepspeed_commands.py`
+  - DeepSpeed command generation
+
+### Phase 8: Cluster Auto-Detection & Workload Profiling (Priority: Medium)
+- Create `src/autoparallel/cluster/detection.py`
+  - Implement detect_cluster() function
+  - SLURM environment variable detection
+  - torchrun distributed settings detection
+  - Local GPU detection via nvidia-ml-py
+- Create `src/autoparallel/cluster/topology.py`
+  - Network topology inference
+  - Intra-node vs inter-node efficiency modeling
+  - NVSwitch vs RDMA communication costs
+  - NCCL backend optimization
+
+- Create `src/autoparallel/workload/profiler.py`
+  - Request rate pattern analysis
+  - Batch size distribution analysis
+  - Latency requirement assessment
+- Create `src/autoparallel/workload/patterns.py`
+  - Workload type definitions (chatbot, batch inference, training)
+  - Performance metrics calculation
+
+### Phase 9: Performance Optimization & Documentation (Priority: Medium)
 - Optimize memory calculation algorithms (<5 seconds analysis time)
 - Optimize configuration enumeration efficiency
 - Optimize meta-device loading performance
 - Support concurrent analysis requests
 - Memory footprint <100MB during analysis
 
-### 11. Documentation and Examples (Priority: High)
 - Update `README.md` with comprehensive usage examples
 - Create `docs/` directory with detailed guides
 - Create `examples/` directory with real-world scenarios

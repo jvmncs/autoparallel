@@ -1,2 +1,3 @@
-def hello() -> str:
-    return "Hello from autoparallel!"
+"""AutoParallel: Automatic LLM parallelization strategy optimization."""
+
+__version__ = "0.1.0"
