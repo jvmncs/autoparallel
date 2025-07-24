@@ -6,42 +6,42 @@
 - Codebase: Only placeholder `hello()` function in `src/autoparallel/__init__.py` 
 - Specifications: Complete architectural docs in `spec/` directory
 - Dependencies: Configured Astral stack (uv, ruff, ty, pytest)
-- Implementation Status: **0% complete** - everything needs to be built from scratch
+- Implementation Status: **Phase 0 & 1 complete** - scaffolding and memory estimation framework done
 
 ## Phase-Based Implementation Plan
 
-### Phase 0: Scaffolding & Tooling (Priority: Critical - NOW)
-- Create package directories & __init__.py stubs:
-  - `src/autoparallel/memory/`
-  - `src/autoparallel/constraints/`
-  - `src/autoparallel/config/`
-  - `src/autoparallel/api/`
-  - `src/autoparallel/frameworks/`
-  - `src/autoparallel/cluster/`
-  - `src/autoparallel/workload/`
-  - `src/autoparallel/deployment/`
-  - `src/autoparallel/validation/`
-- Add `py.typed` marker for type checking
+### Phase 0: Scaffolding & Tooling (Priority: Critical - NOW) ✅ COMPLETED
+- ✅ Create package directories & __init__.py stubs:
+  - ✅ `src/autoparallel/memory/`
+  - ✅ `src/autoparallel/constraints/`
+  - ✅ `src/autoparallel/config/`
+  - ✅ `src/autoparallel/api/`
+  - ✅ `src/autoparallel/frameworks/`
+  - ✅ `src/autoparallel/cluster/`
+  - ✅ `src/autoparallel/workload/`
+  - ✅ `src/autoparallel/deployment/`
+  - ✅ `src/autoparallel/validation/`
+- ✅ Add `py.typed` marker for type checking
 - Configure entry points in pyproject.toml for pip install -e .
 - Setup CI workflow: ruff check+format, ty check, pytest
-- Create conftest.py with basic pytest fixtures
+- ✅ Create conftest.py with basic pytest fixtures
 
-### Phase 1: Memory Estimation Framework (Priority: Critical)
-- Create `src/autoparallel/memory/estimator.py`
-  - Implement unified memory calculation (weights, activations, KV cache, CUDA graphs)
-  - Support GPTQ, AWQ, bitsandbytes quantization formats
-  - Add configurable safety margins and fragmentation overhead
-  - Implement meta-device analysis for zero-memory introspection
-- Create `src/autoparallel/memory/components.py`
-  - Define MemoryComponents dataclass (weights, activations, kv_cache, cuda_graphs, optimizer_states, fragmentation_overhead)
-  - Implement component-wise memory breakdown calculations
-- Create `src/autoparallel/memory/config.py`
-  - Define MemoryConfig with defaults (utilization_bound=0.85, fragmentation_overhead=0.10, safety_margin=0.05, quantization_format="fp16")
+### Phase 1: Memory Estimation Framework (Priority: Critical) ✅ COMPLETED
+- ✅ Create `src/autoparallel/memory/estimator.py`
+  - ✅ Implement unified memory calculation (weights, activations, KV cache, CUDA graphs)
+  - ✅ Support GPTQ, AWQ, bitsandbytes quantization formats
+  - ✅ Add configurable safety margins and fragmentation overhead
+  - ✅ Implement meta-device analysis for zero-memory introspection
+- ✅ Create `src/autoparallel/memory/components.py`
+  - ✅ Define MemoryComponents dataclass (weights, activations, kv_cache, cuda_graphs, optimizer_states, fragmentation_overhead)
+  - ✅ Implement component-wise memory breakdown calculations
+- ✅ Create `src/autoparallel/memory/config.py`
+  - ✅ Define MemoryConfig with defaults (utilization_bound=0.85, fragmentation_overhead=0.10, safety_margin=0.05, quantization_format="fp16")
 - Create `src/autoparallel/memory/estimator_test.py`
   - Unit tests for each memory component calculation
   - Edge case handling (extreme model sizes, memory constraints)
-- Create `src/autoparallel/memory/components_test.py`
-  - Validation against different quantization formats
+- ✅ Create `src/autoparallel/memory/components_test.py`
+  - ✅ Validation against different quantization formats
 
 ### Phase 2: Architecture Constraint Analyzer (Priority: Critical)
 - Create `src/autoparallel/constraints/analyzer.py`
