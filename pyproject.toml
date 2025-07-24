@@ -7,7 +7,9 @@ authors = [
     { name = "Jason Mancuso", email = "7891333+jvmncs@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "transformers>=4.40.0",
+]
 
 [dependency-groups]
 dev = [

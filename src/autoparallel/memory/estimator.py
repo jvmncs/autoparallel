@@ -287,6 +287,15 @@ class TransformersMemoryEstimator(MemoryEstimator):
 class MoEMemoryEstimator(MemoryEstimator):
     """Memory estimator for Mixture of Experts (MoE) models."""
 
+    def __init__(self, config: MemoryConfig | None = None):
+        """Initialize MoE memory estimator.
+
+        Args:
+            config: Memory configuration. Uses defaults if None.
+        """
+        super().__init__(config)
+        self._transformer_estimator = TransformersMemoryEstimator(config)
+
     def estimate_memory(
         self,
         model_config: dict[str, Any],
@@ -309,7 +318,7 @@ class MoEMemoryEstimator(MemoryEstimator):
         num_experts_per_token = model_config.get("num_experts_per_token", 2)
 
         # Base transformer estimation
-        base_components = super().estimate_memory(
+        base_components = self._transformer_estimator.estimate_memory(
             model_config,
             sequence_length,
             batch_size,

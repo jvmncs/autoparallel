@@ -58,8 +58,12 @@ def test_memory_components_properties():
         safety_margin=15,
     )
 
-    assert components.model_memory == 1000 + 500 + 200  # weights + activations + kv_cache
-    assert components.overhead_memory == 50 + 25 + 15  # fragmentation + framework + safety
+    assert (
+        components.model_memory == 1000 + 500 + 200
+    )  # weights + activations + kv_cache
+    assert (
+        components.overhead_memory == 50 + 25 + 15
+    )  # fragmentation + framework + safety
     assert components.framework_memory == 100 + 300  # cuda_graphs + optimizer_states
 
 

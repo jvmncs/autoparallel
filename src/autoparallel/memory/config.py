@@ -52,7 +52,8 @@ class MemoryConfig:
 
         if not 0.0 <= self.fragmentation_overhead < 1.0:
             raise ValueError(
-                f"fragmentation_overhead must be in [0.0, 1.0), got {self.fragmentation_overhead}"
+                f"fragmentation_overhead must be in [0.0, 1.0), "
+                f"got {self.fragmentation_overhead}"
             )
 
         if not 0.0 <= self.safety_margin < 1.0:
@@ -62,17 +63,20 @@ class MemoryConfig:
 
         if not 0.0 <= self.min_kv_cache_fraction <= 1.0:
             raise ValueError(
-                f"min_kv_cache_fraction must be in [0.0, 1.0], got {self.min_kv_cache_fraction}"
+                f"min_kv_cache_fraction must be in [0.0, 1.0], "
+                f"got {self.min_kv_cache_fraction}"
             )
 
         if self.cuda_graph_overhead_mb < 0:
             raise ValueError(
-                f"cuda_graph_overhead_mb must be >= 0, got {self.cuda_graph_overhead_mb}"
+                f"cuda_graph_overhead_mb must be >= 0, "
+                f"got {self.cuda_graph_overhead_mb}"
             )
 
         if self.optimizer_memory_fraction < 0:
             raise ValueError(
-                f"optimizer_memory_fraction must be >= 0, got {self.optimizer_memory_fraction}"
+                f"optimizer_memory_fraction must be >= 0, "
+                f"got {self.optimizer_memory_fraction}"
             )
 
     @property

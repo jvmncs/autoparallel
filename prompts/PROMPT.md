@@ -14,7 +14,9 @@
 
 9999. Important: We want single sources of truth, no migrations/adapters. If tests unrelated to your work fail then it's your job to resolve these tests as part of the increment of change.
 
-999999. As soon as there are no build or test errors create a jj commit and make a bookmark for it.
+99999. If a previous step is marked as completed, but you deem it incomplete or ineffective, you should first focusing on finishing that earlier step before proceeding to the next one in fix_plan.md. SUPER IMPORTANT!!!!
+
+999999. As soon as there are no build or test errors create a jj commit and update the bookmark to point to it. MAKE SURE YOU DESCRIBE YOUR COMMITS PROPERLY
 
 999999999. You may add extra logging if required to be able to debug the issues.
 
