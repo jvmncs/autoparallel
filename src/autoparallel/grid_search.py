@@ -190,7 +190,8 @@ def find_best_config(
         model_config: Model configuration
         max_gpus: Maximum number of GPUs available
         gpu_memory_gb: Memory per GPU in GB
-        objective: Optimization objective ("minimize_gpus", "maximize_throughput", "balance")
+        objective: Optimization objective ("minimize_gpus", "maximize_throughput",
+            "balance")
         sequence_length: Input sequence length
         batch_size: Batch size per GPU
         quantization_bytes: Bytes per parameter
@@ -231,7 +232,8 @@ def find_best_config(
         return valid_configs[0]  # Already sorted by score
     else:
         raise ValueError(
-            f"Unknown objective: {objective}. Use 'minimize_gpus', 'maximize_throughput', or 'balance'"
+            f"Unknown objective: {objective}. "
+            f"Use 'minimize_gpus', 'maximize_throughput', or 'balance'"
         )
 
 

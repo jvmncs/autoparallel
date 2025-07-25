@@ -15,10 +15,11 @@ from autoparallel.grid_search import (
 from autoparallel.memory import MemoryBreakdown
 
 
-class MockConfig:
+class MockConfig(dict):
     """Mock configuration for testing."""
 
     def __init__(self, **kwargs):
+        super().__init__(kwargs)
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -61,7 +62,7 @@ def test_calculate_config_score():
     )
 
     # Unbalanced configuration should score lower
-    unbalanced_score = _calculate_config_score(
+    _calculate_config_score(
         tp=8, pp=1, ep=1, dp=1, memory_utilization=0.8, total_gpus=8
     )
 

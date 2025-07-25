@@ -99,13 +99,15 @@ def estimate_memory(
 ) -> MemoryBreakdown:
     """Estimate memory usage for given model configuration.
 
-    Uses simplified heuristics optimized for ~20% estimation error and <100ms analysis time.
+    Uses simplified heuristics optimized for ~20% estimation error and
+    <100ms analysis time.
 
     Args:
         model_config: Hugging Face model configuration or dict
         sequence_length: Input sequence length
         batch_size: Batch size
-        quantization_bytes: Bytes per parameter (2 for fp16/bf16, 4 for fp32, 1 for int8)
+        quantization_bytes: Bytes per parameter (2 for fp16/bf16, 4 for fp32,
+            1 for int8)
         enable_kv_cache: Whether to include KV cache estimation
         framework_overhead_gb: Framework overhead in GB (default: 2GB for vLLM)
 

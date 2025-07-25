@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
-"""Example usage of vLLMMemoryEstimator for optimizing vLLM configurations."""
+"""Example usage of vLLMMemoryEstimator for optimizing vLLM configurations.
 
-from autoparallel.frameworks.vllm_memory import (
-    WorkloadProfile,
-    get_vllm_default_capture_sizes,
-    vLLMMemoryEstimator,
-)
+NOTE: This example is temporarily disabled as the vLLM framework integration
+is not yet implemented. The core autoparallel functionality works without vLLM.
+"""
+
+# Temporarily disabled - vLLM framework integration deferred
+# from autoparallel.frameworks.vllm_memory import (
+#     WorkloadProfile,
+#     get_vllm_default_capture_sizes,
+#     vLLMMemoryEstimator,
+# )
 
 
 def main():
     """Demonstrate vLLM memory estimation and optimization."""
 
+    print("vLLM Memory Estimation Demo")
+    print("NOTE: This example is temporarily disabled.")
+    print("vLLM framework integration is not yet implemented.")
+    return  # Exit early since vLLM modules are not available
+
     # Create a vLLM memory estimator
-    estimator = vLLMMemoryEstimator()
+    # estimator = vLLMMemoryEstimator()
 
     # Define a Llama 7B model configuration
     model_config = {

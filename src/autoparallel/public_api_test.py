@@ -1,5 +1,6 @@
 """Tests for simplified public API module."""
 
+import contextlib
 from unittest.mock import patch
 
 import pytest
@@ -20,10 +21,11 @@ from autoparallel.public_api import (
 )
 
 
-class MockConfig:
+class MockConfig(dict):
     """Mock configuration for testing."""
 
     def __init__(self, **kwargs):
+        super().__init__(kwargs)
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -334,22 +336,23 @@ def test_analyze_model_load_failure(mock_load_config, sample_cluster):
 def test_quantization_parameter():
     """Test that quantization parameter is handled correctly."""
     # This is more of an integration test to ensure quantization flows through
-    with patch("autoparallel.public_api._load_model_config") as mock_load:
-        with patch("autoparallel.public_api.find_valid_configs") as mock_find:
-            mock_load.return_value = MockConfig(vocab_size=1000, hidden_size=256)
-            mock_find.return_value = []
+    with (
+        patch("autoparallel.public_api._load_model_config") as mock_load,
+        patch("autoparallel.public_api.find_valid_configs") as mock_find
+    ):
+        mock_load.return_value = MockConfig(vocab_size=1000, hidden_size=256)
+        mock_find.return_value = []
 
-            try:
-                analyze(
-                    "test-model",
-                    {"gpu_count": 1, "gpu_memory_gb": 24},
-                    quantization="int8",
-                )
-            except InsufficientMemoryError:
-                pass  # Expected for no valid configs
+        with contextlib.suppress(InsufficientMemoryError):
+            analyze(
+                "test-model",
+                {"gpu_count": 1, "gpu_memory_gb": 24},
+                quantization="int8",
+            )
 
-            # Verify that get_quantization_bytes was called (indirectly through the flow)
-            assert mock_find.called
+        # Verify that get_quantization_bytes was called
+        # (indirectly through the flow)
+        assert mock_find.called
 
 
 def test_integration_with_real_small_config():

@@ -60,7 +60,9 @@ param_count_70b = _estimate_param_count(
     intermediate_size=28672,
     num_experts=0,
 )
-print(f"Direct 70B params: {param_count_70b:,} = {param_count_70b * 2 / (1024**3):.1f}GB")
+print(
+    f"Direct 70B params: {param_count_70b:,} = {param_count_70b * 2 / (1024**3):.1f}GB"
+)
 
 param_count_7b = _estimate_param_count(
     vocab_size=32000,

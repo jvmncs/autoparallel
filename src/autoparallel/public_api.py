@@ -99,7 +99,9 @@ def analyze(
             max_configs=max_configs,
         )
     except Exception as e:
-        raise InsufficientMemoryError(f"Failed to find valid configurations: {e}")
+        raise InsufficientMemoryError(
+            f"Failed to find valid configurations: {e}"
+        ) from e
 
     if not valid_configs:
         raise InsufficientMemoryError(
@@ -146,7 +148,8 @@ def best_config(
     _validate_cluster_spec(cluster)
     if objective not in ["minimize_gpus", "maximize_throughput", "balance"]:
         raise ValueError(
-            f"Invalid objective '{objective}'. Use: minimize_gpus, maximize_throughput, balance"
+            f"Invalid objective '{objective}'. "
+            f"Use: minimize_gpus, maximize_throughput, balance"
         )
 
     # Load model configuration
@@ -169,7 +172,7 @@ def best_config(
             quantization_bytes=quantization_bytes,
         )
     except Exception as e:
-        raise InsufficientMemoryError(f"Failed to find best configuration: {e}")
+        raise InsufficientMemoryError(f"Failed to find best configuration: {e}") from e
 
     return best_config_obj.to_dict()
 
@@ -285,6 +288,7 @@ def estimate_cost(
         "Cost estimation is a basic heuristic. Actual costs depend on cloud provider, "
         "region, spot pricing, and other factors.",
         UserWarning,
+        stacklevel=2,
     )
 
     # Get configurations for different objectives
@@ -343,7 +347,7 @@ def _validate_cluster_spec(cluster: dict[str, Any]) -> None:
         raise ValueError("gpu_count must be a positive integer")
 
     if (
-        not isinstance(cluster["gpu_memory_gb"], (int, float))
+        not isinstance(cluster["gpu_memory_gb"], int | float)
         or cluster["gpu_memory_gb"] <= 0
     ):
         raise ValueError("gpu_memory_gb must be a positive number")
@@ -372,7 +376,7 @@ def _load_model_config(model: str) -> PretrainedConfig | dict[str, Any]:
             error_msg += "- Model doesn't exist on Hugging Face Hub\n"
             error_msg += "\nTry: huggingface-cli login (if model is private)"
 
-        raise ModelNotFoundError(error_msg)
+        raise ModelNotFoundError(error_msg) from e
 
 
 def _estimate_param_count_simple(arch_info: dict[str, Any]) -> str:
@@ -423,4 +427,4 @@ def find_minimum_gpus(model: str, gpu_memory_gb: float, **kwargs) -> dict[str, A
             "configuration": config,
         }
     except Exception as e:
-        raise InsufficientMemoryError(f"Cannot determine minimum GPUs: {e}")
+        raise InsufficientMemoryError(f"Cannot determine minimum GPUs: {e}") from e

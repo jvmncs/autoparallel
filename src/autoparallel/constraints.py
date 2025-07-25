@@ -1,8 +1,11 @@
 """Simplified constraint analysis for autoparallel configurations.
 
-This module provides simple functional constraint analysis without complex class hierarchies.
-Focus on determining valid parallelism sizes based on model architecture divisibility rules.
+This module provides simple functional constraint analysis without complex class
+hierarchies. Focus on determining valid parallelism sizes based on model
+architecture divisibility rules.
 """
+
+from typing import Any
 
 try:
     from transformers import PretrainedConfig
@@ -12,7 +15,7 @@ except ImportError:
 
 
 def valid_tensor_parallel_sizes(
-    model_config: PretrainedConfig, max_size: int
+    model_config: PretrainedConfig | dict[str, Any], max_size: int
 ) -> list[int]:
     """Return valid tensor parallel sizes based on attention heads divisibility.
 
@@ -34,16 +37,16 @@ def valid_tensor_parallel_sizes(
     # Check divisibility constraints for each potential TP size
     for tp_size in range(1, max_size + 1):
         # Primary constraint: attention heads must be divisible by TP size
-        if num_attention_heads % tp_size == 0:
-            # Secondary constraint: key-value heads must be divisible (for GQA models)
-            if num_key_value_heads % tp_size == 0:
-                valid_sizes.append(tp_size)
+        # Secondary constraint: key-value heads must be divisible (for GQA models)
+        if (num_attention_heads % tp_size == 0 and
+                num_key_value_heads % tp_size == 0):
+            valid_sizes.append(tp_size)
 
     return valid_sizes
 
 
 def valid_pipeline_parallel_sizes(
-    model_config: PretrainedConfig, max_size: int
+    model_config: PretrainedConfig | dict[str, Any], max_size: int
 ) -> list[int]:
     """Return valid pipeline parallel sizes based on layer count.
 
@@ -72,7 +75,7 @@ def valid_pipeline_parallel_sizes(
 
 
 def valid_expert_parallel_sizes(
-    model_config: PretrainedConfig, max_size: int
+    model_config: PretrainedConfig | dict[str, Any], max_size: int
 ) -> list[int]:
     """Return valid expert parallel sizes for MoE models (1 for dense models).
 
@@ -108,7 +111,7 @@ def valid_expert_parallel_sizes(
     return valid_sizes
 
 
-def get_divisors(n: int, max_divisor: int = None) -> list[int]:
+def get_divisors(n: int, max_divisor: int | None = None) -> list[int]:
     """Get all divisors of a number up to max_divisor.
 
     Args:
@@ -193,7 +196,9 @@ def validate_parallelism_config(
     return len(errors) == 0, errors
 
 
-def get_model_architecture_info(model_config: PretrainedConfig) -> dict:
+def get_model_architecture_info(
+    model_config: PretrainedConfig | dict[str, Any],
+) -> dict:
     """Extract basic model architecture information for constraint analysis.
 
     Args:
@@ -232,7 +237,7 @@ def get_model_architecture_info(model_config: PretrainedConfig) -> dict:
 
 
 def check_tensor_parallel_efficiency(
-    model_config: PretrainedConfig, tensor_parallel_size: int
+    model_config: PretrainedConfig | dict[str, Any], tensor_parallel_size: int
 ) -> list[str]:
     """Check tensor parallel configuration for efficiency warnings.
 
@@ -250,7 +255,8 @@ def check_tensor_parallel_efficiency(
     if arch_info["hidden_size"] % tensor_parallel_size != 0:
         warnings.append(
             f"Hidden size ({arch_info['hidden_size']}) not divisible by "
-            f"tensor parallel size ({tensor_parallel_size}) - may cause padding overhead"
+            f"tensor parallel size ({tensor_parallel_size}) - "
+            f"may cause padding overhead"
         )
 
     # Check if intermediate size is efficiently divisible
@@ -264,7 +270,8 @@ def check_tensor_parallel_efficiency(
     if arch_info["vocab_size"] % tensor_parallel_size != 0:
         warnings.append(
             f"Vocabulary size ({arch_info['vocab_size']}) not divisible by "
-            f"tensor parallel size ({tensor_parallel_size}) - may cause embedding padding"
+            f"tensor parallel size ({tensor_parallel_size}) - "
+            f"may cause embedding padding"
         )
 
     # Recommend power-of-2 sizes for large TP
@@ -278,7 +285,7 @@ def check_tensor_parallel_efficiency(
 
 
 def check_pipeline_parallel_efficiency(
-    model_config: PretrainedConfig, pipeline_parallel_size: int
+    model_config: PretrainedConfig | dict[str, Any], pipeline_parallel_size: int
 ) -> list[str]:
     """Check pipeline parallel configuration for efficiency warnings.
 
@@ -314,15 +321,15 @@ def check_pipeline_parallel_efficiency(
     min_layers_per_stage = 2
     if layers_per_stage < min_layers_per_stage:
         warnings.append(
-            f"Pipeline configuration results in {layers_per_stage:.1f} layers per stage, "
-            f"below recommended minimum of {min_layers_per_stage}"
+            f"Pipeline configuration results in {layers_per_stage:.1f} "
+            f"layers per stage, below recommended minimum of {min_layers_per_stage}"
         )
 
     return warnings
 
 
 def check_expert_parallel_efficiency(
-    model_config: PretrainedConfig, expert_parallel_size: int
+    model_config: PretrainedConfig | dict[str, Any], expert_parallel_size: int
 ) -> list[str]:
     """Check expert parallel configuration for efficiency warnings.
 
@@ -339,7 +346,8 @@ def check_expert_parallel_efficiency(
     # Non-MoE models should use EP=1
     if not arch_info["is_moe"] and expert_parallel_size > 1:
         warnings.append(
-            f"Expert parallel size ({expert_parallel_size}) should be 1 for non-MoE models"
+            f"Expert parallel size ({expert_parallel_size}) "
+            f"should be 1 for non-MoE models"
         )
         return warnings
 

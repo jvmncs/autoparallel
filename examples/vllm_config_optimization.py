@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Example demonstrating vLLM configuration optimization."""
+"""Example demonstrating vLLM configuration optimization.
 
-from autoparallel.frameworks.vllm_config import (
-    AutotuningParameters,
-    optimize_vllm_config_for_cluster,
-    vLLMConfigOptimizer,
-)
-from autoparallel.frameworks.vllm_memory import WorkloadProfile
+NOTE: This example is temporarily disabled as the vLLM framework integration
+is not yet implemented. The core autoparallel functionality works without vLLM.
+"""
+
+# Temporarily disabled - vLLM framework integration deferred
+# from autoparallel.frameworks.vllm_config import (
+#     AutotuningParameters,
+#     optimize_vllm_config_for_cluster,
+#     vLLMConfigOptimizer,
+# )
+# from autoparallel.frameworks.vllm_memory import WorkloadProfile
 
 
 def demonstrate_vllm_config_optimization():
@@ -14,7 +19,10 @@ def demonstrate_vllm_config_optimization():
 
     print("=" * 60)
     print("vLLM Configuration Optimization Demo")
+    print("NOTE: This example is temporarily disabled.")
+    print("vLLM framework integration is not yet implemented.")
     print("=" * 60)
+    return  # Exit early since vLLM modules are not available
 
     # Configuration parameters
     model_name = "microsoft/DialoGPT-small"  # Small model for demo
@@ -151,38 +159,38 @@ def demonstrate_workload_comparison():
     model_name = "microsoft/DialoGPT-small"
     gpu_memory_capacity_gb = 24.0
 
-    workloads = {
-        "Chatbot": WorkloadProfile.create_synthetic("chatbot"),
-        "Batch Inference": WorkloadProfile.create_synthetic("batch_inference"),
-        "Interactive": WorkloadProfile.create_synthetic("interactive"),
-    }
+    # workloads = {
+    #     "Chatbot": WorkloadProfile.create_synthetic("chatbot"),
+    #     "Batch Inference": WorkloadProfile.create_synthetic("batch_inference"),
+    #     "Interactive": WorkloadProfile.create_synthetic("interactive"),
+    # }
 
-    optimizer = vLLMConfigOptimizer(model_name, gpu_memory_capacity_gb)
+    # optimizer = vLLMConfigOptimizer(model_name, gpu_memory_capacity_gb)
 
-    print(f"{'Workload':<15} {'Batch Size':<12} {'Graph Coverage':<15} {'Score':<8}")
-    print("-" * 60)
+    # print(f"{'Workload':<15} {'Batch Size':<12} {'Graph Coverage':<15} {'Score':<8}")
+    # print("-" * 60)
 
-    for name, workload in workloads.items():
-        result = optimizer.search_optimal_config(workload)
+    # for name, workload in workloads.items():
+    #     result = optimizer.search_optimal_config(workload)
 
-        if result["optimal_config"] and result["predictions"]:
-            batch_size = result["predictions"]["effective_batch_size"]
-            coverage = result["predictions"]["graph_coverage"]
-            score = result["performance_score"]
+    #     if result["optimal_config"] and result["predictions"]:
+    #         batch_size = result["predictions"]["effective_batch_size"]
+    #         coverage = result["predictions"]["graph_coverage"]
+    #         score = result["performance_score"]
 
-            print(f"{name:<15} {batch_size:<12} {coverage:<14.1%} {score:<8.2f}")
-        else:
-            print(f"{name:<15} {'No solution':<12} {'':<15} {'':<8}")
+    #         print(f"{name:<15} {batch_size:<12} {coverage:<14.1%} {score:<8.2f}")
+    #     else:
+    #         print(f"{name:<15} {'No solution':<12} {'':<15} {'':<8}")
 
-    print()
-    print("=" * 60)
+    # print()
+    # print("=" * 60)
 
 
 if __name__ == "__main__":
     try:
         demonstrate_vllm_config_optimization()
         print()
-        demonstrate_workload_comparison()
+        # demonstrate_workload_comparison()  # Also disabled - uses vLLM modules
     except Exception as e:
         print(f"Error: {e}")
         print("Note: This example requires internet access to download model configs")
