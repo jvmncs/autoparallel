@@ -2,31 +2,33 @@
 
 __version__ = "0.1.0"
 
-# Import public API functions and classes
-from autoparallel.api.advanced import (
-    AnalysisInsights,
-    AutoParallel,
-    Cluster,
-    DetailedConfiguration,
-    OptimizationResult,
-    Preferences,
-    Workload,
+# Import simplified public API
+from autoparallel.public_api import (
+    InsufficientMemoryError,
+    ModelNotFoundError,
+    analyze,
+    best_config,
+    check_memory_requirements,
+    estimate_cost,
+    find_minimum_gpus,
+    get_memory_estimate,
+    # Convenience aliases
+    get_parallelism_config,
 )
-from autoparallel.api.simple import AnalysisResult, OptimizedConfig, analyze, optimize
 
-# Make key classes and functions available at package level
+# Export main API functions
 __all__ = [
-    # Simple API
+    "__version__",
+    # Core API functions
     "analyze",
-    "optimize",
-    "AnalysisResult",
-    "OptimizedConfig",
-    # Advanced API
-    "AutoParallel",
-    "Cluster",
-    "Workload",
-    "Preferences",
-    "OptimizationResult",
-    "DetailedConfiguration",
-    "AnalysisInsights",
+    "best_config",
+    "check_memory_requirements",
+    "estimate_cost",
+    # Exceptions
+    "ModelNotFoundError",
+    "InsufficientMemoryError",
+    # Convenience functions
+    "get_parallelism_config",
+    "get_memory_estimate",
+    "find_minimum_gpus",
 ]
