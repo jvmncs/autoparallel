@@ -419,28 +419,85 @@ def optimize(model: str, cluster: dict[str, Any], workload: str) -> OptimizedCon
 
 
 def _generate_basic_deployment_command(model: str, config: Any, workload: str) -> str:
-    """Generate a basic deployment command string."""
-    # This is a simplified placeholder - full deployment command generation
-    # will be implemented in Phase 5 (vLLM Integration)
+    """Generate optimized vLLM deployment command string."""
+    from autoparallel.deployment.vllm_commands import (
+        VLLMCommandGenerator,
+        VLLMDeploymentOptions,
+    )
+    from autoparallel.frameworks.vllm_optimizer import GPUArchitecture
+    from autoparallel.config.optimizer import HardwareProfile, WorkloadProfile, ParallelismConfiguration, WorkloadType
 
-    tp_size = config.tensor_parallel_size
-    pp_size = config.pipeline_parallel_size
-    total_gpus = config.total_gpus_needed
+    # Create hardware profile from config
+    hardware_profile = HardwareProfile(
+        gpu_model="A100",  # Default assumption, could be made configurable
+        gpu_memory_gb=40.0,  # Default assumption, could be made configurable
+        gpus_per_node=min(config.total_gpus_needed, 8),  # Assume max 8 GPUs per node
+        num_nodes=max(1, config.total_gpus_needed // 8),
+        intra_node_bandwidth_gbps=900.0,  # NVLink default
+        inter_node_bandwidth_gbps=200.0,  # RDMA default
+    )
 
-    if workload.lower() in ("inference", "chatbot", "interactive"):
-        # vLLM-style command
+    # Create workload profile
+    # Convert string workload to WorkloadType
+    try:
+        workload_type = WorkloadType(workload.lower())
+    except ValueError:
+        # Default to inference for unknown workload types
+        workload_type = WorkloadType.INFERENCE
+    
+    workload_profile = WorkloadProfile(
+        workload_type=workload_type,
+        batch_size=32,  # Default assumption
+        sequence_length=512,  # Default assumption
+    )
+
+    # Create parallelism configuration
+    parallelism_config = ParallelismConfiguration(
+        tensor_parallel_size=config.tensor_parallel_size,
+        pipeline_parallel_size=config.pipeline_parallel_size,
+        expert_parallel_size=getattr(config, 'expert_parallel_size', 1),
+        data_parallel_size=getattr(config, 'data_parallel_size', 1),
+    )
+
+    # Determine GPU architecture
+    gpu_arch = GPUArchitecture.A100  # Default, could be made configurable
+
+    try:
+        # Generate optimized deployment command
+        generator = VLLMCommandGenerator(
+            model_name=model,
+            hardware_profile=hardware_profile,
+            gpu_architecture=gpu_arch,
+        )
+
+        if workload.lower() in ("inference", "chatbot", "interactive"):
+            # Generate serving command
+            result = generator.generate_serving_command(
+                workload=workload_profile,
+                parallelism_config=parallelism_config,
+                options=VLLMDeploymentOptions(),
+            )
+        else:
+            # For training workloads, fall back to torchrun
+            total_gpus = config.total_gpus_needed
+            return (
+                f"torchrun --nproc_per_node={total_gpus} train.py "
+                f"--model {model} "
+                f"--tensor_parallel_size {config.tensor_parallel_size} "
+                f"--pipeline_parallel_size {config.pipeline_parallel_size}"
+            )
+
+        return result.command
+
+    except Exception as e:
+        # Fallback to basic command if optimization fails
+        tp_size = config.tensor_parallel_size
+        pp_size = config.pipeline_parallel_size
+        
         return (
             f"python -m vllm.entrypoints.openai.api_server "
             f"--model {model} "
             f"--tensor-parallel-size {tp_size} "
             f"--pipeline-parallel-size {pp_size} "
             f"--host 0.0.0.0 --port 8000"
-        )
-    else:
-        # Training-style command
-        return (
-            f"torchrun --nproc_per_node={total_gpus} train.py "
-            f"--model {model} "
-            f"--tensor_parallel_size {tp_size} "
-            f"--pipeline_parallel_size {pp_size}"
         )

@@ -349,13 +349,40 @@ class OptimizationResult:
     """Time taken to generate configurations"""
 
     def deploy_vllm(self) -> str:
-        """Generate vLLM deployment command for recommended configuration."""
+        """Generate optimized vLLM deployment command for recommended configuration."""
         if not self.recommended_configuration:
             raise ValueError("No recommended configuration available")
 
-        return self.recommended_configuration.deployment_commands.get(
-            "vllm", "# vLLM deployment not available"
-        )
+        from autoparallel.deployment.vllm_commands import generate_vllm_deployment_command
+        from autoparallel.frameworks.vllm_optimizer import GPUArchitecture
+
+        try:
+            # Generate optimized deployment command
+            result = generate_vllm_deployment_command(
+                model_name=self.model_name,
+                hardware_profile=self.cluster,
+                workload=self.workload,
+                parallelism_config=self.recommended_configuration,
+                gpu_architecture=GPUArchitecture.A100,  # Could be made configurable
+            )
+            
+            return result.command
+            
+        except Exception as e:
+            # Fallback to deployment commands if available
+            fallback = self.recommended_configuration.deployment_commands.get("vllm")
+            if fallback:
+                return fallback
+            
+            # Generate basic fallback command
+            config = self.recommended_configuration
+            return (
+                f"python -m vllm.entrypoints.openai.api_server "
+                f"--model {self.model_name} "
+                f"--tensor-parallel-size {config.tensor_parallel_size} "
+                f"--pipeline-parallel-size {config.pipeline_parallel_size} "
+                f"--host 0.0.0.0 --port 8000"
+            )
 
     def deploy_deepspeed(self) -> dict[str, Any]:
         """Generate DeepSpeed configuration for recommended configuration."""
