@@ -10,7 +10,7 @@
 
 2. When you discover an unexpected issue within the existing library/test code, immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
 
-3. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with 'jj commit {files} -m "{commit_msg}"' via bash. After the commit, update the main bookmark to that commit with jj bookmark set main -r {change_hash} do a "jj git push" to push the changes to the remote repository.
+3. When the tests pass update the @fix_plan.md, then add changed code and @fix_plan.md with `jj commit {files} -m "{commit_msg}"` via bash. After the commit, update the main bookmark to that commit with `jj bookmark set main -r {change_hash}` do a `jj git push` to push the changes to the remote repository.
 
 9999. Important: We want single sources of truth, no migrations/adapters. If tests unrelated to your work fail then it's your job to resolve these tests as part of the increment of change.
 

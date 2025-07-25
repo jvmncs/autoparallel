@@ -3,10 +3,12 @@
 > **Structure Note**: This plan is organized as a comprehensive bullet-point list of implementation steps, referencing detailed specifications in `spec/` and current source code state. When editing, maintain this concise bullet-point structure - avoid verbose explanations that duplicate spec content.
 
 ## Current State Assessment
-- Codebase: Memory estimation framework complete with comprehensive test coverage
+- Codebase: Core framework complete with comprehensive test coverage
 - Specifications: Complete architectural docs in `spec/` directory
 - Dependencies: Configured Astral stack (uv, ruff, ty, pytest)
-- Implementation Status: **Phase 1, 2, 3 & 4 COMPLETED** - public API implementation successfully deployed (41 new tests added, 399 total tests, 96% coverage), ready for Phase 5
+- Implementation Status: **Phase 1, 2, 3 & 4 VERIFIED COMPLETE** - Core memory estimation, constraint analysis, configuration generation, and public API fully implemented (399 tests, 96% coverage)
+- **CRITICAL GAP**: Phase 5 (vLLM integration) completely missing - requires full autotuning system implementation
+- **BLOCKING ITEMS**: Missing framework-specific components, deployment automation, and validation infrastructure for production readiness
 
 ## Phase-Based Implementation Plan
 
@@ -97,93 +99,139 @@
   - ✅ Cleaned up placeholder code
 - ✅ **Successfully implemented**: Both simple and advanced APIs with comprehensive tests (41 new tests, all passing)
 
-### Phase 5: vLLM Integration & Autotuning (Priority: High)
+### Phase 5: vLLM Integration & Autotuning (Priority: CRITICAL - BLOCKING) ❌ MISSING
+**STATUS**: Complete vLLM autotuning system missing - only placeholder framework directory exists
 - Create `src/autoparallel/frameworks/vllm_optimizer.py`
-  - Implement VLLMOptimizer class
-  - Add optimize_kv_cache_vs_cuda_graphs() method
-  - Add generate_deployment_command() method
-  - GPU architecture-specific optimizations (H100, A100)
+  - ❌ Implement VLLMOptimizer class with configuration search algorithms
+  - ❌ Add optimize_kv_cache_vs_cuda_graphs() method for memory tradeoff optimization
+  - ❌ Add generate_deployment_command() method (currently returns placeholder)
+  - ❌ GPU architecture-specific optimizations (H100, A100)
 - Create `src/autoparallel/frameworks/vllm_config.py`
-  - vLLM-specific configuration handling
-  - Engine parameter optimization
+  - ❌ vLLMPerformanceModel class for memory modeling without engine instantiation
+  - ❌ AutotuningParameters dataclass with all configurable vLLM parameters
+  - ❌ WorkloadProfile class for vLLM-specific workload characterization
+  - ❌ Engine parameter optimization and configuration validation
+- Create `src/autoparallel/frameworks/vllm_memory.py`
+  - ❌ vLLMMemoryEstimator with KV cache size calculation
+  - ❌ CUDA graph memory estimation with batch scaling
+  - ❌ Effective batch size calculation based on memory constraints
+  - ❌ Graph coverage calculation for workload-based optimization
 - Create `src/autoparallel/deployment/vllm_commands.py`
-  - Ready-to-run vLLM command generation
-- Create `src/autoparallel/frameworks/vllm_optimizer_test.py`
-  - Mock vLLM engine creation for validation
-- Create `src/autoparallel/frameworks/vllm_config_test.py`
-  - Configuration parameter verification
-- Create `src/autoparallel/deployment/vllm_commands_test.py`
-  - Deployment command generation testing
+  - ❌ Ready-to-run vLLM command generation (replace API placeholders)
+  - ❌ Integration with cluster analysis and parallelism strategies
+- Create comprehensive tests:
+  - ❌ `src/autoparallel/frameworks/vllm_optimizer_test.py`
+  - ❌ `src/autoparallel/frameworks/vllm_config_test.py`
+  - ❌ `src/autoparallel/deployment/vllm_commands_test.py`
+**DEPENDENCIES**: Phase 5 requires completing Phase 4.5 missing components first
 
-### Phase 6: Empirical Validation & Benchmarks (Priority: High)
+### Phase 4.5: Missing Core Infrastructure (Priority: CRITICAL - BLOCKING) ❌ MISSING
+**STATUS**: Essential components missing before Phase 5 can begin
+- **Cluster Detection & Topology** (completely missing):
+  - ❌ Create `src/autoparallel/cluster/detection.py` with detect_cluster(), from_slurm(), from_torchrun_env(), from_local_gpus()
+  - ❌ Create `src/autoparallel/cluster/topology.py` with network topology inference and communication cost modeling
+  - ❌ Implement ClusterSpec dataclass with NetworkTopologyParameters
+- **Workload Profiling** (completely missing):
+  - ❌ Create `src/autoparallel/workload/profiler.py` with request rate pattern analysis
+  - ❌ Create `src/autoparallel/workload/patterns.py` with workload type definitions (chatbot, batch inference, training)
+  - ❌ Implement WorkloadProfile classes for different workload types
+- **Framework-Specific Memory Estimators** (missing from spec compliance):
+  - ❌ Implement vLLMMemoryEstimator class extending MemoryEstimator
+  - ❌ Implement DeepSpeedMemoryEstimator class extending MemoryEstimator
+  - ❌ Implement create_memory_estimator() factory function
+- **API Placeholders Replacement** (blocking production use):
+  - ❌ Replace SLURM auto-detection placeholders in advanced.py
+  - ❌ Replace deployment command generation placeholders in simple.py and advanced.py
+  - ❌ Implement InsufficientResourcesError and other missing exception classes
+- **Examples and Documentation** (missing from spec):
+  - ❌ Create `examples/` directory with real-world scenarios
+  - ❌ Create `docs/` directory with detailed guides
+  - ❌ Add quick start guide and API reference
+
+### Phase 6: Empirical Validation & Benchmarks (Priority: High) ❌ MISSING
+**STATUS**: Validation infrastructure placeholder only - all real validation missing
 - Create `src/validation/memory_accuracy_test.py`
-  - Limited model loading for accuracy tests
-  - Memory estimation error measurement (<10% target)
+  - ❌ Limited model loading for accuracy tests
+  - ❌ Memory estimation error measurement (<10% target)
 - Create `src/validation/performance_benchmarks_test.py`
-  - Performance target validation
-  - Analysis speed benchmarks (<30 seconds)
+  - ❌ Performance target validation
+  - ❌ Analysis speed benchmarks (<30 seconds)
 - Create `scripts/validate_against_real_deployments.py`
-  - Framework deployment verification
-  - Real-world validation scenarios
+  - ❌ Framework deployment verification
+  - ❌ Real-world validation scenarios
 - Test target models:
-  - Dense: Qwen3-14B/32B (bf16, 32K), Llama-3.1-70B (bf16, 128K)
-  - MoE: Qwen3-30B-A3B (128 experts), DeepSeek-V3 (256 experts)
-  - Extreme: Llama4-Scout (10M context), Kimi-K2 (384 experts)
-  - Multimodal: Llama4 text+image
+  - ❌ Dense: Qwen3-14B/32B (bf16, 32K), Llama-3.1-70B (bf16, 128K)
+  - ❌ MoE: Qwen3-30B-A3B (128 experts), DeepSeek-V3 (256 experts)
+  - ❌ Extreme: Llama4-Scout (10M context), Kimi-K2 (384 experts)
+  - ❌ Multimodal: Llama4 text+image
 
-### Phase 7: DeepSpeed Integration (Priority: Medium)
+### Phase 7: DeepSpeed Integration (Priority: Medium) ❌ MISSING
+**STATUS**: Basic DeepSpeed config placeholder exists but integration system missing
 - Create `src/autoparallel/frameworks/deepspeed_optimizer.py`
-  - Implement DeepSpeedOptimizer class
-  - Add optimize_zero_config() method
-  - Automatic ZeRO stage selection (1/2/3)
-  - Training-specific optimizations
+  - ❌ Implement DeepSpeedOptimizer class
+  - ❌ Add optimize_zero_config() method
+  - ❌ Automatic ZeRO stage selection (1/2/3)
+  - ❌ Training-specific optimizations
 - Create `src/autoparallel/frameworks/zero_config.py`
-  - ZeRO configuration handling
-  - Gradient accumulation optimization
+  - ❌ ZeRO configuration handling
+  - ❌ Gradient accumulation optimization
 - Create `src/autoparallel/deployment/deepspeed_commands.py`
-  - DeepSpeed command generation
+  - ❌ DeepSpeed command generation (replace API placeholders)
 
-### Phase 8: Cluster Auto-Detection & Workload Profiling (Priority: Medium)
-- Create `src/autoparallel/cluster/detection.py`
-  - Implement detect_cluster() function
-  - SLURM environment variable detection
-  - torchrun distributed settings detection
-  - Local GPU detection via nvidia-ml-py
-- Create `src/autoparallel/cluster/topology.py`
-  - Network topology inference
-  - Intra-node vs inter-node efficiency modeling
-  - NVSwitch vs RDMA communication costs
-  - NCCL backend optimization
+### Phase 8: Enhanced Testing Strategy (Priority: Medium) ❌ MISSING
+**STATUS**: Current testing lacks architecture diversity and integration tests per spec
+- **Test Organization Reform**:
+  - ❌ Create dedicated test directory structure (tests/unit/, tests/integration/, tests/system/, tests/acceptance/)
+  - ❌ Move co-located tests to proper directory structure
+  - ❌ Implement meta-device testing for model analysis without memory allocation
+- **Architecture Diversity Testing** (critical gap):
+  - ❌ Real model config tests for Qwen3, DeepSeek-V3, Kimi-K2, Llama-4 (currently only mock configs)
+  - ❌ Native precision tests (bf16, finegrained blockwise fp8, block-fp8)
+  - ❌ Max context length tests (32K, 128K, 1M, 10M tokens)
+  - ❌ Multimodal architecture testing (early fusion text+image)
+- **Framework Integration Tests**:
+  - ❌ vLLM engine instantiation tests with generated configurations
+  - ❌ DeepSpeed ZeRO configuration tests
+  - ❌ Mock vLLM/DeepSpeed API integration
+- **Performance and Validation Tests**:
+  - ❌ Synthetic workload validation against mathematical models
+  - ❌ Framework comparison (vLLM vs DeepSpeed memory estimates)
+  - ❌ Configuration ranking and optimization target validation
 
-- Create `src/autoparallel/workload/profiler.py`
-  - Request rate pattern analysis
-  - Batch size distribution analysis
-  - Latency requirement assessment
-- Create `src/autoparallel/workload/patterns.py`
-  - Workload type definitions (chatbot, batch inference, training)
-  - Performance metrics calculation
+### Phase 9: Performance Optimization & Documentation (Priority: Medium) ❌ MISSING
+**STATUS**: Performance optimization and documentation infrastructure missing
+- **Performance Optimization**:
+  - ❌ Optimize memory calculation algorithms (<5 seconds analysis time)
+  - ❌ Optimize configuration enumeration efficiency
+  - ❌ Optimize meta-device loading performance
+  - ❌ Support concurrent analysis requests
+  - ❌ Memory footprint <100MB during analysis
+- **Documentation Infrastructure** (critical for adoption):
+  - ❌ Update `README.md` with comprehensive usage examples
+  - ❌ Create `docs/` directory with detailed guides
+  - ❌ Create `examples/` directory with real-world scenarios (completely missing)
+  - ❌ Add quick start guide with common use cases
+  - ❌ Create API reference with all configuration options
+  - ❌ Add framework integration guides (vLLM, DeepSpeed)
+  - ❌ Create troubleshooting and FAQ sections
 
-### Phase 9: Performance Optimization & Documentation (Priority: Medium)
-- Optimize memory calculation algorithms (<5 seconds analysis time)
-- Optimize configuration enumeration efficiency
-- Optimize meta-device loading performance
-- Support concurrent analysis requests
-- Memory footprint <100MB during analysis
+## Implementation Priority Summary
 
-- Update `README.md` with comprehensive usage examples
-- Create `docs/` directory with detailed guides
-- Create `examples/` directory with real-world scenarios
-- Add quick start guide with common use cases
-- Create API reference with all configuration options
-- Add framework integration guides (vLLM, DeepSpeed)
-- Create troubleshooting and FAQ sections
+### IMMEDIATE BLOCKERS (Must Complete Before Phase 5):
+1. **Phase 4.5 Core Infrastructure** - Cluster detection, workload profiling, framework-specific memory estimators
+2. **API Placeholder Replacement** - Replace all placeholder methods with real implementations
+3. **Framework Autotuning Foundation** - vLLM/DeepSpeed memory estimators and configuration classes
 
-## Testing Strategy
-- Meta-device first approach (HuggingFace meta devices for memory-free testing)
-- Architecture-driven testing (model configs, not loaded weights)
-- Selective integration testing for critical validation
-- Performance targets: unit tests <1s, integration tests <30s, system tests <5min
-- Coverage targets: 90% line coverage, 85% branch coverage
+### PHASE 5 READINESS CHECKLIST:
+- ❌ vLLM autotuning system (0/14 components implemented)
+- ❌ Deployment command generation (placeholders only)
+- ❌ Performance modeling without engine instantiation
+- ❌ Memory tradeoff optimization (KV cache vs CUDA graphs)
+
+## Testing Strategy Status
+- **Current**: 96% line coverage, 399 tests, co-located with source files
+- **Specification Compliance**: ❌ MISSING dedicated test directory structure, architecture diversity testing, and integration tests
+- **Critical Gaps**: No meta-device testing, no real model configs, no framework integration tests
 
 ## Quality Assurance
 - Run `uv run ruff check --fix && uv run ruff format` for code quality
